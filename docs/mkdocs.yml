@@ -1,0 +1,35 @@
+site_name: Angle-Only Tracking Library
+site_description: GPU-accelerated angle-only tracking in C++20 with Python bindings
+repo_url: https://github.com/angle-only/angle-only
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+
+nav:
+  - Home: index.md
+  - Getting Started: getting_started.md
+  - Architecture: architecture.md
+  - API Reference:
+    - C++ API: api/cpp.md
+    - Python API: api/python.md
+  - MATLAB Migration: matlab_migration.md
+  - Examples: examples.md

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["scikit-build-core>=0.5", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "angle-only"
+version = "0.1.0"
+description = "GPU-accelerated angle-only tracking library"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.21"]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+viz = ["plotly>=5.0"]
+dev = ["pytest>=7.0", "plotly>=5.0"]
+
+[tool.scikit-build]
+cmake.args = ["-DAOT_BUILD_PYTHON=ON"]
+wheel.packages = ["angle_only"]
+
+[tool.pytest.ini_options]
+testpaths = ["../tests/python", "../tests/integration"]

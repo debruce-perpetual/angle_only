@@ -1,0 +1,13 @@
+build/
+build-*/
+*.so
+*.dylib
+*.dll
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+.cache/
+.claude/
+compile_commands.json
+*.html
