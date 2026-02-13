@@ -14,6 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(AOT_BUILD_TESTS "Build C++ tests" ON)
 option(AOT_BUILD_PYTHON "Build Python bindings" OFF)
 option(AOT_BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(AOT_BUILD_MATLAB "Build MATLAB MEX bindings" OFF)
 option(AOT_ENABLE_CUDA "Enable CUDA GPU acceleration" OFF)
 
 # CMake modules
@@ -119,6 +120,11 @@ endif()
 # Python bindings
 if(AOT_BUILD_PYTHON)
     add_subdirectory(python)
+endif()
+
+# MATLAB MEX bindings
+if(AOT_BUILD_MATLAB)
+    add_subdirectory(matlab)
 endif()
 
 # Benchmarks

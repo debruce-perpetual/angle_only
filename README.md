@@ -453,6 +453,40 @@ cmake -B build -DAOT_BUILD_PYTHON=ON
 cmake --build build
 ```
 
+### Build with MATLAB MEX Bindings
+
+```bash
+cmake -B build -DAOT_BUILD_MATLAB=ON
+cmake --build build
+```
+
+Requires MATLAB to be installed and discoverable by CMake. If MATLAB is not found, the build skips MEX bindings gracefully.
+
+### MATLAB Example — Passive Ranging
+
+```matlab
+% Setup (once per session)
+run('matlab/setup.m')
+
+% Create a detection
+det.azimuth = 0.3;
+det.elevation = 0.1;
+det.noise = 1e-4 * eye(2);
+
+% Initialize MSC-EKF from detection
+ekf = aot.initcvmscekf(det, 0.01, 0.05);
+
+% Tracking loop
+for k = 1:100
+    ekf.predict(1.0);
+    ekf.correct([new_az; new_el], 1e-4 * eye(2));
+end
+
+x = ekf.state();           % [az, el, 1/r, az_dot, el_dot, inv_r_dot]
+range = 1.0 / x(3);        % estimated range
+P = ekf.covariance();       % 6x6 covariance
+```
+
 ### C++ Example — Passive Ranging
 
 ```cpp
@@ -638,6 +672,24 @@ angle_only/
 │       ├── filters_py.py           # Pythonic filter wrappers
 │       ├── fusion_py.py            # Pythonic fusion wrappers
 │       └── visualization.py        # 3D Plotly visualization
+├── matlab/
+│   ├── CMakeLists.txt              # MEX build (find_package Matlab)
+│   ├── setup.m                     # Path setup for MATLAB
+│   ├── src/
+│   │   ├── angle_only_mex.cpp      # MEX gateway (single entry point)
+│   │   ├── mex_utils.hpp           # Eigen ↔ mxArray conversion
+│   │   └── object_store.hpp        # Handle-based C++ object management
+│   ├── +aot/                       # MATLAB package (+aot namespace)
+│   │   ├── MSCEKF.m                # MSC-EKF wrapper class
+│   │   ├── GMPHD.m                 # GM-PHD wrapper class
+│   │   ├── initcvmscekf.m          # Factory function
+│   │   ├── triangulateLOS.m        # LOS triangulation
+│   │   ├── gnn_assign.m            # Hungarian assignment
+│   │   ├── auction_assign.m        # Auction assignment
+│   │   ├── jpda_probabilities.m    # JPDA
+│   │   └── ...                     # Coord transforms, gating
+│   └── examples/
+│       └── passive_ranging_demo.m  # End-to-end demo
 ├── tests/
 │   ├── cpp/                        # 54 Catch2 tests
 │   ├── python/                     # pytest suite
@@ -657,18 +709,18 @@ angle_only/
 
 This library is a C++ reimplementation of MATLAB's angle-only tracking functions. The following table maps MATLAB names to their C++ equivalents:
 
-| MATLAB | C++ | Python |
-|--------|-----|--------|
-| `trackingMSCEKF` | `aot::filters::MSCEKF` | `aot.MSCEKF` |
-| `initcvmscekf` | `aot::filters::initcvmscekf()` | `aot.initcvmscekf()` |
-| `constvelmsc` | `aot::motion::ConstantVelocityMSC::predict()` | `aot.motion.ConstantVelocityMSC` |
-| `constvelmscjac` | `aot::motion::ConstantVelocityMSC::jacobian()` | — |
-| `cvmeasmsc` | `aot::measurement::MSCMeasurement::predict()` | `aot.measurement.MSCMeasurement` |
-| `cvmeasmscjac` | `aot::measurement::MSCMeasurement::jacobian()` | — |
-| `constvel` | `aot::motion::ConstantVelocity` | `aot.motion.ConstantVelocity` |
-| `constacc` | `aot::motion::ConstantAcceleration` | `aot.motion.ConstantAcceleration` |
-| `constturn` | `aot::motion::CoordinatedTurn` | `aot.motion.CoordinatedTurn` |
-| `triangulateLOS` | `aot::fusion::triangulate_los()` | `aot.triangulate_los()` |
+| MATLAB | C++ | Python | MEX Binding |
+|--------|-----|--------|-------------|
+| `trackingMSCEKF` | `aot::filters::MSCEKF` | `aot.MSCEKF` | `aot.MSCEKF` |
+| `initcvmscekf` | `aot::filters::initcvmscekf()` | `aot.initcvmscekf()` | `aot.initcvmscekf()` |
+| `constvelmsc` | `aot::motion::ConstantVelocityMSC::predict()` | `aot.motion.ConstantVelocityMSC` | — |
+| `constvelmscjac` | `aot::motion::ConstantVelocityMSC::jacobian()` | — | — |
+| `cvmeasmsc` | `aot::measurement::MSCMeasurement::predict()` | `aot.measurement.MSCMeasurement` | — |
+| `cvmeasmscjac` | `aot::measurement::MSCMeasurement::jacobian()` | — | — |
+| `constvel` | `aot::motion::ConstantVelocity` | `aot.motion.ConstantVelocity` | — |
+| `constacc` | `aot::motion::ConstantAcceleration` | `aot.motion.ConstantAcceleration` | — |
+| `constturn` | `aot::motion::CoordinatedTurn` | `aot.motion.CoordinatedTurn` | — |
+| `triangulateLOS` | `aot::fusion::triangulate_los()` | `aot.triangulate_los()` | `aot.triangulateLOS()` |
 
 Python also provides MATLAB-style aliases via `angle_only.compat`:
 
@@ -754,6 +806,7 @@ auto jpda = aot::association::jpda_probabilities(likelihood_matrix,
 | `AOT_BUILD_TESTS` | `ON` | Build Catch2 test suite |
 | `AOT_BUILD_PYTHON` | `OFF` | Build pybind11 Python bindings |
 | `AOT_BUILD_BENCHMARKS` | `OFF` | Build performance benchmarks |
+| `AOT_BUILD_MATLAB` | `OFF` | Build MATLAB MEX bindings |
 | `AOT_ENABLE_CUDA` | `OFF` | Enable CUDA GPU acceleration |
 
 ### Dependencies
@@ -763,6 +816,7 @@ auto jpda = aot::association::jpda_probabilities(likelihood_matrix,
 - **Eigen 3.4** (fetched automatically via FetchContent)
 - **Catch2 v3.5.2** (fetched automatically, tests only)
 - **pybind11 v2.12.0** (fetched automatically, Python bindings only)
+- **MATLAB** (optional, MEX bindings only — requires MX_LIBRARY component)
 - **CUDA Toolkit** (optional, GPU acceleration only)
 
 ---
